@@ -1,0 +1,174 @@
+{
+	"info": {
+		"_postman_id": "6223d654-d46f-4d18-bc94-bf61ffaf60b5",
+		"name": "Doozie Shop",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "28300289"
+	},
+	"item": [
+		{
+			"name": "Search items",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Parse the response body\r",
+							"try {\r",
+							"    var jsonData = pm.response.json();\r",
+							"} catch (e) {\r",
+							"    pm.test(\"Response body is valid JSON\", function () {\r",
+							"        pm.expect(false, `Failed to parse JSON: ${e.message}`).to.be.true;\r",
+							"    });\r",
+							"    // Stop further testing if JSON parsing fails\r",
+							"    return;\r",
+							"}\r",
+							"\r",
+							"// --- Overall Response Structure Validation ---\r",
+							"pm.test(\"Response structure: 'success' field is present and a boolean\", function () {\r",
+							"    const success = jsonData.success;\r",
+							"    pm.expect(success, \"'success' field is missing or not a boolean\").to.be.a('boolean');\r",
+							"    if (!pm.expect(success).to.be.true) {\r",
+							"        console.log(\"ISSUE: The 'success' field is present but its value is not 'true'. Actual value: \" + success);\r",
+							"    }\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response structure: 'result' field is present and an array\", function () {\r",
+							"    const result = jsonData.result;\r",
+							"    pm.expect(result, \"'result' field is missing\").to.exist;\r",
+							"    pm.expect(result, \"'result' field is not an array\").to.be.an('array');\r",
+							"});\r",
+							"\r",
+							"// --- Result Array Validation ---\r",
+							"pm.test(\"Result array is not empty\", function () {\r",
+							"    const result = jsonData.result;\r",
+							"    if (pm.expect(result).to.be.an('array')) {\r",
+							"        pm.expect(result.length, \"The 'result' array is empty\").to.be.above(0);\r",
+							"        if (result.length === 0) {\r",
+							"            console.log(\"ISSUE: The 'result' array is empty, expected at least one item.\");\r",
+							"        }\r",
+							"    }\r",
+							"});\r",
+							"\r",
+							"// --- Individual Item Validation (Schema and Data Types) ---\r",
+							"const requiredStringFields = [\"item_id\", \"title\", \"description\", \"currency\", \"shop_id\", \"shop_name\", \"item_url\", \"platform\"];\r",
+							"const requiredBooleanFields = [\"availability\", \"tax_included\", \"best_seller\"];\r",
+							"const requiredNumberFields = [\"price\", \"affiliate_rate\", \"review_count\", \"review_average\"];\r",
+							"\r",
+							"// Check if the 'result' array exists and is an array before iterating\r",
+							"if (jsonData.result && Array.isArray(jsonData.result)) {\r",
+							"    jsonData.result.forEach((item, index) => {\r",
+							"        pm.test(`Item ${index}: Item has all required string fields and they are strings`, function () {\r",
+							"            requiredStringFields.forEach(field => {\r",
+							"                const value = item[field];\r",
+							"                pm.expect(value, `Field '${field}' is missing`).to.exist;\r",
+							"                // Allowing null/empty string for fields like 'brand', 'tags', etc., but checking primary ones\r",
+							"                if (pm.expect(value).to.be.a('string')) {\r",
+							"                    if (value.length === 0) {\r",
+							"                        // Log if a required string field is empty, but don't fail the test if expecting non-null\r",
+							"                        console.log(`NOTE: Item ${index}'s required string field '${field}' is present but empty.`);\r",
+							"                    }\r",
+							"                } else {\r",
+							"                    console.log(`ISSUE: Item ${index}'s field '${field}' is not a string. Actual type: ${typeof value}.`);\r",
+							"                }\r",
+							"            });\r",
+							"        });\r",
+							"\r",
+							"        pm.test(`Item ${index}: Item has all required boolean fields and they are booleans`, function () {\r",
+							"            requiredBooleanFields.forEach(field => {\r",
+							"                const value = item[field];\r",
+							"                pm.expect(value, `Field '${field}' is missing`).to.exist;\r",
+							"                if (!pm.expect(value).to.be.a('boolean')) {\r",
+							"                    console.log(`ISSUE: Item ${index}'s field '${field}' is not a boolean. Actual type: ${typeof value}.`);\r",
+							"                }\r",
+							"            });\r",
+							"        });\r",
+							"\r",
+							"        pm.test(`Item ${index}: Item has all required number fields and they are numbers`, function () {\r",
+							"            requiredNumberFields.forEach(field => {\r",
+							"                const value = item[field];\r",
+							"                pm.expect(value, `Field '${field}' is missing`).to.exist;\r",
+							"                if (!pm.expect(value).to.be.a('number')) {\r",
+							"                    console.log(`ISSUE: Item ${index}'s field '${field}' is not a number. Actual type: ${typeof value}.`);\r",
+							"                }\r",
+							"            });\r",
+							"        });\r",
+							"\r",
+							"        pm.test(`Item ${index}: 'image_urls' is an array of strings`, function () {\r",
+							"            const image_urls = item.image_urls;\r",
+							"            pm.expect(image_urls, \"Field 'image_urls' is missing\").to.exist;\r",
+							"            if (pm.expect(image_urls).to.be.an('array')) {\r",
+							"                // Check if every element in the array is a string\r",
+							"                const allStrings = image_urls.every(url => typeof url === 'string');\r",
+							"                if (!pm.expect(allStrings).to.be.true) {\r",
+							"                    console.log(`ISSUE: Item ${index}'s 'image_urls' array contains non-string elements.`);\r",
+							"                }\r",
+							"            } else {\r",
+							"                console.log(`ISSUE: Item ${index}'s field 'image_urls' is not an array. Actual type: ${typeof image_urls}.`);\r",
+							"            }\r",
+							"        });\r",
+							"\r",
+							"        pm.test(`Item ${index}: 'tag_ids' is an array of numbers`, function () {\r",
+							"            const tag_ids = item.tag_ids;\r",
+							"            pm.expect(tag_ids, \"Field 'tag_ids' is missing\").to.exist;\r",
+							"            if (pm.expect(tag_ids).to.be.an('array')) {\r",
+							"                // Check if every element in the array is a number\r",
+							"                const allNumbers = tag_ids.every(id => typeof id === 'number');\r",
+							"                if (!pm.expect(allNumbers).to.be.true) {\r",
+							"                    console.log(`ISSUE: Item ${index}'s 'tag_ids' array contains non-number elements.`);\r",
+							"                }\r",
+							"            } else {\r",
+							"                // 'tag_ids' can sometimes be null if no tags, so this check allows null, but if present, must be an array.\r",
+							"                if (tag_ids !== null) {\r",
+							"                    console.log(`ISSUE: Item ${index}'s field 'tag_ids' is not an array (or null). Actual type: ${typeof tag_ids}.`);\r",
+							"                }\r",
+							"            }\r",
+							"        });\r",
+							"        \r",
+							"    });\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"rakuten_query_parameters\": {\r\n    \"keyword\": \"belt\",\r\n    \"sort\": \"-itemPrice\"\r\n   \r\n  }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://demo-shop-api.gigalogy.com.bd/v1/items/search",
+					"protocol": "https",
+					"host": [
+						"demo-shop-api",
+						"gigalogy",
+						"com",
+						"bd"
+					],
+					"path": [
+						"v1",
+						"items",
+						"search"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
